@@ -48,6 +48,8 @@
    - 403 `source_forbidden`：当前出口 IP 和登记的不一致，同样请用户把新 IP 发给维护者。
 4. 不要把 token 打印到对话里，也不要提交进任何代码仓库。
 
+Windows 上在 Git Bash 里执行同样的命令（Claude Code 在 Windows 上用的就是 Git Bash），启动文件用 `~/.bashrc`。
+
 ### 手动安装
 
 不用 AI 的话，按上面第 1–3 步自己操作，效果一样。同一 VPC 的机器把地址换成内网 `http://172.23.214.40:8772`。
