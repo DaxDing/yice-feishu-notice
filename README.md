@@ -4,34 +4,53 @@
 
 ## 开通
 
-向维护者提供两样东西：
+把你的**出口 IP** 发给维护者就行。出口 IP 是服务端看到的公网 IP，必须固定：不知道的话，跟你的 AI 说「查一下我的公网出口 IP」，或者关掉代理后打开 <https://ip.sb>。家用宽带或代理的 IP 会变，变了要重新报；和服务在同一阿里云 VPC 的机器给内网 IP。
 
-1. **出口 IP**：服务端看到的公网 IP，必须固定。查法：关掉代理后访问 <https://ip.sb>。家用宽带或代理的 IP 会变，变了就要重新报。和服务在同一阿里云 VPC 的机器给内网 IP。
-2. **用途**：一句话说明谁在用、发什么。
+维护者开通后会给你一段**安装口令**，里面有你专属的 token。token 只在你登记的 IP 上有效，每条消息都会记录是谁发的；默认权限是「发送 + 查自己发过的」，每分钟最多 60 条。
 
-维护者会回给你专属的 `NOTIFICATION_API_TOKEN`。token 只在你登记的 IP 上有效，每条消息都会记录是谁发的。默认权限是「发送 + 查自己发过的」，每分钟最多 60 条。
+## 安装：把口令贴给 AI
 
-## 安装
+把安装口令原样发给你的 AI（Claude Code 或 Codex），它会自己装好、配好、验证通过。口令长这样：
 
-```bash
-git clone https://github.com/DaxDing/yice-feishu-notice.git
-mkdir -p ~/.claude/skills && cp -R yice-feishu-notice/yice-feishu-notice ~/.claude/skills/
-```
-
-Codex 用户复制到 `~/.codex/skills/`。然后配置环境变量，比如写进 `~/.zshrc`（同一 VPC 的机器把地址换成内网 `http://172.23.214.40:8772`）：
-
-```bash
-export NOTIFICATION_API_URL='http://218.244.157.197:8772'
-export NOTIFICATION_API_TOKEN='<你的 token>'
-```
-
-验证：下面这条命令返回 `"ok":true` 和你的调用方名，就说明接通了。
-
-```bash
-curl -sS "$NOTIFICATION_API_URL/v1/whoami" -H "Authorization: Bearer $NOTIFICATION_API_TOKEN"
+```text
+请安装飞书通知 skill：按 https://github.com/DaxDing/yice-feishu-notice 的 README「AI 安装步骤」操作，我的 token 是 <token>
 ```
 
 装好后直接对 AI 说「给张三发飞书：数仓已完成」就行。
+
+### AI 安装步骤
+
+写给 AI：按顺序执行，任何一步失败就停下，告诉用户原因。
+
+1. 把本仓库克隆到临时目录，再把其中的 `yice-feishu-notice/` 目录复制到 skills 目录：Claude Code 是 `~/.claude/skills/`，Codex 是 `~/.codex/skills/`。已有旧版本就整个替换。
+2. 新建 `~/.config/yice-feishu-notice/env`，权限设为 600，写入下面两行（token 用用户给的值）：
+
+   ```bash
+   export NOTIFICATION_API_URL='http://218.244.157.197:8772'
+   export NOTIFICATION_API_TOKEN='<用户给的 token>'
+   ```
+
+   再在用户 shell 的启动文件末尾加一行加载它（zsh 是 `~/.zshrc`，bash 是 `~/.bashrc`；已经有这一行就不要重复加）：
+
+   ```bash
+   [ -f ~/.config/yice-feishu-notice/env ] && . ~/.config/yice-feishu-notice/env
+   ```
+
+3. 加载这个文件后调用 `whoami` 验证：
+
+   ```bash
+   . ~/.config/yice-feishu-notice/env && curl -sS -m 15 "$NOTIFICATION_API_URL/v1/whoami" -H "Authorization: Bearer $NOTIFICATION_API_TOKEN"
+   ```
+
+   - 返回 `"ok":true`：已接通，告诉用户返回的 `caller`。
+   - 连接超时：出口 IP 不在白名单。用 `curl -s https://ip.sb` 查出当前出口 IP，请用户发给维护者。
+   - 401：token 不对，请用户核对口令。
+   - 403 `source_forbidden`：当前出口 IP 和登记的不一致，同样请用户把新 IP 发给维护者。
+4. 不要把 token 打印到对话里，也不要提交进任何代码仓库。
+
+### 手动安装
+
+不用 AI 的话，按上面第 1–3 步自己操作，效果一样。同一 VPC 的机器把地址换成内网 `http://172.23.214.40:8772`。
 
 ## 发一条消息
 

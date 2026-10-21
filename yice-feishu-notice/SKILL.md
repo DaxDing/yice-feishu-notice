@@ -13,7 +13,7 @@ metadata:
 
 ## 结果模板
 
-所有人（包括 yice 自己）都直接调线上 API，不经本地工具。调用前需要两个环境变量：`NOTIFICATION_API_URL`（外网 `http://218.244.157.197:8772`；同一 VPC 用内网地址，见 api.md）和 `NOTIFICATION_API_TOKEN`（本调用方 token，开通时由维护者交付）；yice 本机两者都在 `project/yice-notification/.env`。一条通知写成请求体文件 `m.json`：
+所有人（包括 yice 自己）都直接调线上 API，不经本地工具。调用前需要两个环境变量：`NOTIFICATION_API_URL`（外网 `http://218.244.157.197:8772`；同一 VPC 用内网地址，见 api.md）和 `NOTIFICATION_API_TOKEN`（本调用方 token，开通时由维护者交付）；yice 本机两者都在 `project/yice-notification/.env`，其他人按 README 安装时写在 `~/.config/yice-feishu-notice/env`（环境变量没设置时先加载它）。一条通知写成请求体文件 `m.json`：
 
 ```json
 {"template": "demo.markdown.v1", "target": {"name": "张三"},
@@ -32,7 +32,7 @@ curl -sS -X POST "$NOTIFICATION_API_URL/v1/notifications" \
 
 成功的标志是 HTTP 200 且响应 `status` 为 `sent`；其他状态码按 api.md 的应对表处理。查询用 `GET /v1/whoami`、`GET /v1/notifications/{id}`、`GET /v1/notifications?status=failed`，同样带上 token。
 
-接入新调用方，对方需提供：调用方名、用途、所需权限范围、服务端看到的出口 IP；同一 VPC 的机器给内网 IP。维护者按 yice 主仓 `project/yice-notification/deploy/DEPLOY.md`「调用方维护」完成：在 `config/callers.v1.json` 声明（含 `sources`）、在 ECS `.env` 生成 token、`deploy.sh --execute`，外网来源再跑 `sync_whitelist.py --execute`，最后从对方机器调 `whoami` 回读。分享给别人用私有仓库 `github.com/DaxDing/yice-feishu-notice`（先加对方为协作者），token 另行交付。
+接入新调用方，对方只需提供服务端看到的出口 IP（同一 VPC 的机器给内网 IP）；调用方名、默认权限 `notifications:send` 由维护者定。维护者按 yice 主仓 `project/yice-notification/deploy/DEPLOY.md`「调用方维护」完成：在 `config/callers.v1.json` 声明（含 `sources`）、在 ECS `.env` 生成 token、`deploy.sh --execute`，外网来源再跑 `sync_whitelist.py --execute`，然后私聊发给对方一段安装口令：`请安装飞书通知 skill：按 https://github.com/DaxDing/yice-feishu-notice 的 README「AI 安装步骤」操作，我的 token 是 <token>`。对方的 AI 装好后调通 `whoami`，就是回读。
 
 ## 资料指南
 
