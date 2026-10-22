@@ -6,12 +6,12 @@
 
 | 调用位置 | `NOTIFICATION_API_URL` |
 |---|---|
-| 外网（出口 IP 已加白名单） | `http://218.244.157.197:8772` |
+| 外网（只认 token，不限出口 IP） | `http://218.244.157.197:8772` |
 | 同一 VPC 的 ECS（如 Task） | `http://172.23.214.40:8772` |
 | Info ECS 本机 | `http://127.0.0.1:8772` |
 
 - 每个调用方一个 token：请求头 `Authorization: Bearer <token>`（或 `X-Notification-Token`）。token 只放环境变量或密钥文件。
-- token 只在声明的来源 IP 有效；外网来源还要在安全组白名单里。明文 HTTP：消息里不放密码、密钥等机密。
+- 外网调用方只认 token、不限来源 IP；内网服务的 token 只在声明的内网 IP 有效。明文 HTTP：token 可能被截获，消息里不放密码、密钥等机密。
 - 发送人是企业应用 bot「伊策 - 小助理」。
 - 可选请求头 `X-Request-Id`（`[A-Za-z0-9._:-]{1,128}`）会写进服务端审计日志，便于对账；响应头 `X-Request-Id` 是服务端生成的请求号。
 
@@ -78,9 +78,9 @@
 | 429 | `throttled` | 服务配速排队超过等待上限，未落库 | 几秒后同一请求原样重发 |
 | 429 | `rate_limited` | 超过本调用方每分钟发送上限，未落库 | 按 `Retry-After` 后原样重发 |
 | 401 | `token_required` / `unauthorized` | 缺 token 或 token 无效 | 检查 `NOTIFICATION_API_TOKEN` |
-| 403 | `source_forbidden` / `scope_forbidden` | 来源 IP 未声明 / 权限范围不足 | 找维护者更新声明 |
+| 403 | `source_forbidden` / `scope_forbidden` | 来源不在声明内（仅限定来源的调用方）/ 权限范围不足 | 找维护者更新声明 |
 | 503 | `directory_not_configured`、`directory_unavailable`、`transport_not_configured`、`storage_unavailable` | 依赖不可用 | `storage_unavailable` 按 202 处理，其余稍后重试 |
-| 连接超时 | — | 多为来源 IP 不在安全组白名单（不是 token 问题） | 找维护者加白名单；send 超时按 202 处理 |
+| 连接超时 | — | 网络不通或服务不可用（不是 token 问题） | 检查本机代理与网络后重试；send 超时按 202 处理 |
 
 ## 并发与配速
 
