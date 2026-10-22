@@ -3,6 +3,8 @@ name: yice-feishu-notice
 description: "经 yice 通知 API 用企业 bot「伊策 - 小助理」发飞书通知：按人名、open_id、群 chat_id 或登记目标发 Markdown / 纯文本 / 富文本；预览、发送、查记录；给新调用方开通 token。Trigger on: 发飞书通知, 通知某人, 发到群, 通知 API, yice-notify, 接入通知, 开通通知权限, 通知发失败, 429/403。Does NOT trigger on: 看板推送与推送通知（→ feishu-push）、以个人身份发消息或读写飞书文档表格（→ feishu-call）。"
 metadata:
   service: project/yice-notification
+  version: "1.0.0"
+  updated: "2026-10-22"
 ---
 
 # yice 飞书通知

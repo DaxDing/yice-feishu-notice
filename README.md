@@ -1,5 +1,7 @@
 # yice-feishu-notice
 
+版本 1.0.0 · 更新于 2026-10-22
+
 用一个 HTTP API，以企业 bot「伊策 - 小助理」的身份给飞书个人或群发消息。本仓库是一个 Agent Skill：装进 Claude Code / Codex 后，AI 会按 [SKILL.md](yice-feishu-notice/SKILL.md) 先预览再发送，自己处理重试和报错。不用 AI 的话，直接用 curl 调也可以。
 
 ## 开通
