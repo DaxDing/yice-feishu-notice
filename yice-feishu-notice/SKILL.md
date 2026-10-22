@@ -32,7 +32,7 @@ curl -sS -X POST "$NOTIFICATION_API_URL/v1/notifications" \
 
 成功的标志是 HTTP 200 且响应 `status` 为 `sent`；其他状态码按 api.md 的应对表处理。查询用 `GET /v1/whoami`、`GET /v1/notifications/{id}`、`GET /v1/notifications?status=failed`，同样带上 token。
 
-接入新调用方由维护者操作，对方不用提供任何信息：调用方名、默认权限 `notifications:send` 由维护者定，外网调用方的 `sources` 写 `0.0.0.0/0`（只认 token、不限 IP），同一 VPC 的服务写它的内网 IP。维护者按 yice 主仓 `project/yice-notification/deploy/DEPLOY.md`「调用方维护」完成：在 `config/callers.v1.json` 声明、在 ECS `.env` 生成 token、`deploy.sh --execute`（外网来源有变化时再跑 `sync_whitelist.py --execute`），然后私聊发给对方一段安装口令：`请安装飞书通知 skill：按 https://github.com/DaxDing/yice-feishu-notice 的 README「AI 安装步骤」操作，我的 token 是 <token>`。对方的 AI 装好后调通 `whoami`，就是回读。
+接入新调用方由维护者操作，对方不用提供任何信息：调用方名、默认权限 `notifications:send` 由维护者定，外网调用方的 `sources` 写 `0.0.0.0/0`（只认 token、不限 IP），同一 VPC 的服务写它的内网 IP。维护者按 yice 主仓 `project/yice-notification/deploy/DEPLOY.md`「调用方维护」完成：在 `config/callers.v1.json` 声明后跑 `deploy.sh --execute`（自动生成缺失的 token；外网来源有变化时再跑 `sync_whitelist.py --execute`），然后私聊发给对方一段安装口令：`请安装飞书通知 skill：按 https://github.com/DaxDing/yice-feishu-notice 的 README「AI 安装步骤」操作，我的 token 是 <token>`。对方的 AI 装好后调通 `whoami`，就是回读。
 
 ## 资料指南
 
