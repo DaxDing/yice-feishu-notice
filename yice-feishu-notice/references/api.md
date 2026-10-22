@@ -1,14 +1,13 @@
 # yice 飞书通知 API 合同
 
-服务端真源：yice 主仓 `project/yice-notification`（README、`config/notification_catalog.v1.json`、`config/callers.v1.json`，仅维护者可见）。本页是调用方视角的摘要；字段与服务不一致时以服务和 `GET /v1/catalog` 为准。
+服务端真源：yice 主仓 `project/yice-notification`（README、`config/notification_catalog.v1.json`、`config/callers.v1.json`，仅仓库管理员可见）。本页是调用方视角的摘要；字段与服务不一致时以服务和 `GET /v1/catalog` 为准。
 
 ## 入口与鉴权
 
 | 调用位置 | `NOTIFICATION_API_URL` |
 |---|---|
 | 外网（只认 token，不限出口 IP） | `http://218.244.157.197:8772` |
-| 同一 VPC 的 ECS（如 Task） | `http://172.23.214.40:8772` |
-| Info ECS 本机 | `http://127.0.0.1:8772` |
+| 同一内网的服务 | 内网地址，由仓库管理员配置（yice 主仓 `project/yice-notification/deploy/DEPLOY.md`） |
 
 - 每个调用方一个 token：请求头 `Authorization: Bearer <token>`（或 `X-Notification-Token`）。token 只放环境变量或密钥文件。
 - 外网调用方只认 token、不限来源 IP；内网服务的 token 只在声明的内网 IP 有效。明文 HTTP：token 可能被截获，消息里不放密码、密钥等机密。
@@ -78,7 +77,7 @@
 | 429 | `throttled` | 服务配速排队超过等待上限，未落库 | 几秒后同一请求原样重发 |
 | 429 | `rate_limited` | 超过本调用方每分钟发送上限，未落库 | 按 `Retry-After` 后原样重发 |
 | 401 | `token_required` / `unauthorized` | 缺 token 或 token 无效 | 检查 `NOTIFICATION_API_TOKEN` |
-| 403 | `source_forbidden` / `scope_forbidden` | 来源不在声明内（仅限定来源的调用方）/ 权限范围不足 | 找维护者更新声明 |
+| 403 | `source_forbidden` / `scope_forbidden` | 来源不在声明内（仅限定来源的调用方）/ 权限范围不足 | 找仓库管理员更新声明 |
 | 503 | `directory_not_configured`、`directory_unavailable`、`transport_not_configured`、`storage_unavailable` | 依赖不可用 | `storage_unavailable` 按 202 处理，其余稍后重试 |
 | 连接超时 | — | 网络不通或服务不可用（不是 token 问题） | 检查本机代理与网络后重试；send 超时按 202 处理 |
 

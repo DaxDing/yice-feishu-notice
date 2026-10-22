@@ -15,7 +15,7 @@ metadata:
 
 ## 结果模板
 
-所有人（包括 yice 自己）都直接调线上 API，不经本地工具。调用前需要两个环境变量：`NOTIFICATION_API_URL`（外网 `http://218.244.157.197:8772`；同一 VPC 用内网地址，见 api.md）和 `NOTIFICATION_API_TOKEN`（本调用方 token，开通时由维护者交付）；yice 本机两者都在 `project/yice-notification/.env`，其他人按 README 安装时写在 `~/.config/yice-feishu-notice/env`（环境变量没设置时先加载它）。一条通知写成请求体文件 `m.json`：
+所有人（包括 yice 自己）都直接调线上 API，不经本地工具。调用前需要两个环境变量：`NOTIFICATION_API_URL`（外网 `http://218.244.157.197:8772`；同一内网的服务用仓库管理员配置的内网地址）和 `NOTIFICATION_API_TOKEN`（本调用方 token，开通时由仓库管理员交付）；yice 本机两者都在 `project/yice-notification/.env`，其他人按 README 安装时写在 `~/.config/yice-feishu-notice/env`（环境变量没设置时先加载它）。一条通知写成请求体文件 `m.json`：
 
 ```json
 {"template": "demo.markdown.v1", "target": {"name": "张三"},
@@ -34,20 +34,20 @@ curl -sS -X POST "$NOTIFICATION_API_URL/v1/notifications" \
 
 成功的标志是 HTTP 200 且响应 `status` 为 `sent`；其他状态码按 api.md 的应对表处理。查询用 `GET /v1/whoami`、`GET /v1/notifications/{id}`、`GET /v1/notifications?status=failed`，同样带上 token。
 
-接入新调用方由维护者操作，对方不用提供任何信息：调用方名、默认权限 `notifications:send` 由维护者定，外网调用方的 `sources` 写 `0.0.0.0/0`（只认 token、不限 IP），同一 VPC 的服务写它的内网 IP。维护者按 yice 主仓 `project/yice-notification/deploy/DEPLOY.md`「调用方维护」完成：在 `config/callers.v1.json` 声明后跑 `deploy.sh --execute`（自动生成缺失的 token；外网来源有变化时再跑 `sync_whitelist.py --execute`），然后私聊发给对方一段安装口令：`请安装飞书通知 skill：按 https://github.com/DaxDing/yice-feishu-notice 的 README「AI 安装步骤」操作，我的 token 是 <token>`。对方的 AI 装好后调通 `whoami`，就是回读。
+接入新调用方由仓库管理员操作，对方不用提供任何信息：调用方名、默认权限 `notifications:send` 由仓库管理员定，外网调用方的 `sources` 写 `0.0.0.0/0`（只认 token、不限 IP），同一 VPC 的服务写它的内网 IP。仓库管理员按 yice 主仓 `project/yice-notification/deploy/DEPLOY.md`「调用方维护」完成：在 `config/callers.v1.json` 声明后跑 `deploy.sh --execute`（自动生成缺失的 token；外网来源有变化时再跑 `sync_whitelist.py --execute`），然后私聊发给对方一段安装口令：`请安装飞书通知 skill：按 https://github.com/DaxDing/yice-feishu-notice 的 README「AI 安装步骤」操作，我的 token 是 <token>`。对方的 AI 装好后调通 `whoami`，就是回读。
 
 ## 资料指南
 
 - [references/api.md](references/api.md)：完整 HTTP 合同，包括入口地址、端点、`target` 四种写法、三个模板的 `data` 结构与上限、全部状态码与应对、并发配速。给 Info、Task 或外部系统写对接代码时读它；分享给别人时连同本文件一起给。
-- 登记目标和模板以线上 `GET /v1/catalog` 为准；服务行为与配置的真源是 yice 主仓 `project/yice-notification/README.md`（仅维护者可见）。
+- 登记目标和模板以线上 `GET /v1/catalog` 为准；服务行为与配置的真源是 yice 主仓 `project/yice-notification/README.md`（仅仓库管理员可见）。
 
 ## 红线
 
 - **幂等键是消息的业务身份**：按「来源-事件-业务 ID」取稳定值。超时、202、503 `storage_unavailable` 时原样重发同一请求（服务会回放，不会重复发）；换键等于再发一条，会重复打扰收件人。
 - **429 用原键重试，failed 才换键**：`throttled` / `rate_limited` 未落库，稍后原样重发；`failed` 是明确未送达，修正原因后才用新键重发。
-- **token 是唯一的锁**：外网调用方不限来源 IP，谁拿到 token 都能以 bot 身份发消息；怀疑泄露立刻找维护者换。401 是 token 问题，403 `source_forbidden` 只出现在限定了来源的内网服务，连接超时是网络问题，不要靠换 token 解决。
+- **token 是唯一的锁**：外网调用方不限来源 IP，谁拿到 token 都能以 bot 身份发消息；怀疑泄露立刻找仓库管理员换。401 是 token 问题，403 `source_forbidden` 只出现在限定了来源的内网服务，连接超时是网络问题，不要靠换 token 解决。
 - **群要先拉 bot**：发 `chat_id` 前，「伊策 - 小助理」必须已在群内，否则飞书拒收、记为 failed。
 - **人名只认精确在职姓名**：大小写也算；同名返回 409，必须改用 `open_id` 或登记目标，不要猜部门挑一个。当天入职的人，通讯录次日 08:00 同步后才查得到。
-- **明文 HTTP**：token 只放环境变量或私有文件，不进 URL、日志、群聊或 Git（开通时维护者私聊发的口令除外）；消息内容不放密码、密钥。
+- **明文 HTTP**：token 只放环境变量或私有文件，不进 URL、日志、群聊或 Git（开通时仓库管理员私聊发的口令除外）；消息内容不放密码、密钥。
 - **sent 不等于已读**：消息在收件人与「伊策 - 小助理」的单聊里，不在发送人与收件人的对话里；对方说没收到，先让他在飞书搜这个 bot，不要换键重发。
 - **批量看配速**：同一群每秒约 4 条；批量结果合并成一条消息发，不要逐行刷屏。
